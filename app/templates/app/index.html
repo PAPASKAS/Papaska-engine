@@ -1,0 +1,27 @@
+{% extends 'app/base.html' %}
+{% block title %}Papaska's engine{% endblock %}
+
+{% block content %}
+    <ul class="nav nav-tabs justify-content-end" id="shops" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active text-dark" data-bs-toggle="tab" data-bs-target="#dns" type="button" role="tab" aria-controls="dns" aria-selected="true">DNS</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link text-dark" data-bs-toggle="tab" data-bs-target="#mVideo" type="button" role="tab" aria-controls="mVideo" aria-selected="false">M.Video</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link text-dark" data-bs-toggle="tab" data-bs-target="#svyaznoy" type="button" role="tab" aria-controls="svyaznoy" aria-selected="false">Svyaznoy</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link text-dark" data-bs-toggle="tab" data-bs-target="#bq" type="button" role="tab" aria-controls="bq" aria-selected="false">BQ</button>
+        </li>
+    </ul>
+
+    <div class="tab-content">
+        <div class="tab-pane active" id="dns" role="tabpanel"><div class="row justify-content-evenly gap-3 mt-3"></div></div>
+        <div class="tab-pane" id="mVideo" role="tabpanel"><div class="row justify-content-evenly gap-3 mt-3"></div></div>
+        <div class="tab-pane" id="svyaznoy" role="tabpanel"><div class="row justify-content-evenly gap-3 mt-3"></div></div>
+        <div class="tab-pane" id="bq" role="tabpanel"><div class="row justify-content-evenly gap-3 mt-3"></div></div>
+    </div>
+
+{% endblock %}

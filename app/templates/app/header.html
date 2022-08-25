@@ -1,0 +1,20 @@
+<header class="navbar navbar-expand-lg bg-dark navbar-dark mb-4">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="/">Papaska's engine</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#headerNavBar" aria-controls="headerNavBar" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="headerNavBar">
+            <form class="d-flex ms-auto gap-2 my-2 flex-wrap flex-lg-nowrap" id="searchForm" action="{% url 'search' %}" method="POST">
+                {% csrf_token %}
+                <input autocomplete="on" autofocus class="form-control" type="search" placeholder="Поиск" name="search" required />
+                <button class="btn btn-outline-success ms-auto" type="submit">Поиск</button>
+            </form>
+
+            <form class="d-flex" id="updateDB" action="{% url 'update' %}" method="POST">
+                {% csrf_token %}
+                <button class="btn btn-outline-success ms-auto" type="submit">Update DB</button>
+            </form>
+        </div>
+    </div>
+</header>
