@@ -1,11 +1,8 @@
 from typing import Callable, Type
-
 from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.wait import WebDriverWait
-
 from app.models import Phones
-from bs4 import BeautifulSoup, PageElement
 from selenium import webdriver
 from selenium_stealth import stealth
 from selenium.webdriver.common.by import By
@@ -52,25 +49,30 @@ class Parser:
         )
 
         try:
-            # svyaznoy
-            # self.__main(
-            #     shop='svyaznoy', btn_to_next_page='.next',
-            #     phone_tag='div', phone_class='b-product-block',
-            #     find_need_page=Svyaznoy.find_need_page,
-            #     get_telephone=Svyaznoy.get_telephone,
-            # )
+            types_phones: list[str] = ['smartphones', 'tablet', 'cellular_phones']
 
-            # MVideo
-            # self.__main(
-            #     shop='mVideo', btn_to_next_page='a.page-link.icon.ng-star-inserted',
-            #     phone_tag='div', phone_class='product-cards-layout__item',
-            #     find_need_page=MVideo.find_need_page,
-            #     get_telephone=MVideo.get_telephone,
-            # )
+            # svyaznoy
+            for phone_type in types_phones[:2]:
+                self.__main(
+                    shop='svyaznoy', btn_to_next_page='li.next a',
+                    phones='div.b-product-block',
+                    find_need_page=Svyaznoy.find_need_page,
+                    type_phones=phone_type,
+                    get_phone=Svyaznoy.get_phone,
+                )
+
+            # mVideo
+            for type_phone in types_phones:
+                self.__main(
+                    shop='mVideo', btn_to_next_page='a.page-link.icon.ng-star-inserted',
+                    phones='div.product-cards-layout__item.ng-star-inserted',
+                    find_need_page=MVideo.find_need_page,
+                    type_phones=type_phone,
+                    get_phone=MVideo.get_phone,
+                )
 
             #  DNS
-            types_phones = ['smartphones', 'cellular_phones', 'tablet']
-            for type_phone in types_phones:
+            for type_phone in types_phones[:2]:
                 self.__main(
                     shop='dns',
                     btn_to_next_page='.pagination-widget__page-link.pagination-widget__page-link_next',
@@ -80,14 +82,25 @@ class Parser:
                     get_phone=Dns.get_phone,
                 )
 
+            self.__main(
+                shop='dns',
+                btn_to_next_page='.pagination-widget__page-link.pagination-widget__page-link_next',
+                phones='div.catalog-product.ui-button-widget',
+                type_phones=types_phones[2],
+                find_need_page=Dns.find_need_page,
+                get_phone=Dns.get_cellular_phone,
+            )
+
             # BQ
-            # self.__main(
-            #     shop='bq',
-            #     btn_to_next_page='.pagination-widget__page-link.pagination-widget__page-link',  # 1 page on this site
-            #     phone_tag='div', phone_class='col-xl-3 col-md-3 col-sm-6',
-            #     find_need_page=BQ.find_need_page,
-            #     get_telephone=BQ.get_telephone,
-            # )
+            for type_phone in types_phones:
+                self.__main(
+                    shop='bq',
+                    btn_to_next_page='.pagination-widget__page-link.pagination-widget__page-link',  # 1 page on this site
+                    phones='div.col-xl-3.col-md-3.col-sm-6',
+                    find_need_page=BQ.find_need_page,
+                    type_phones=type_phone,
+                    get_phone=BQ.get_phone,
+                )
         finally:
             self.driver.close()
 
@@ -106,25 +119,28 @@ class Parser:
                 document: list[WebElement] = WebDriverWait(self.driver, timeout=10, ignored_exceptions=ec)\
                     .until(expected_conditions.visibility_of_all_elements_located((By.CSS_SELECTOR, phones)))
                 for telephone in document:
-                    phone: dict[str, Type[str | int | None]] | None = get_phone(telephone)
+                    self.driver.execute_script('arguments[0].scrollIntoView(true)', telephone)
+                    phone = get_phone(telephone)
 
                     if phone['name'] is None or phone['current_price'] is None:
                         continue
 
-                    if not (phone['name'] in unique_name):
-                        unique_name.add(phone['name'])
-                        correct_phone = {
-                            'shop': shop,
-                            'name': phone['name'].strip(),
-                            'name_lower': phone['name'].strip().lower(),
-                            'current_price': phone['current_price'],
-                            'before_discount': phone['before_discount'],
-                        }
+                    if phone['name'] in unique_name:
+                        continue
 
-                        Phones.objects.update_or_create(
-                            **correct_phone,
-                            defaults=correct_phone,
-                        )
+                    unique_name.add(phone['name'])
+                    correct_phone = {
+                        'shop': shop,
+                        'name': phone['name'].strip(),
+                        'name_lower': phone['name'].strip().lower(),
+                        'current_price': phone['current_price'],
+                        'before_discount': phone['before_discount'],
+                    }
+
+                    Phones.objects.update_or_create(
+                        **correct_phone,
+                        defaults=correct_phone,
+                    )
 
                 # to the next page
                 element: WebElement = WebDriverWait(self.driver, timeout=10).until(
@@ -133,5 +149,7 @@ class Parser:
                 if element.get_attribute('href') == 'javascript:':  # dns
                     raise NoSuchElementException()
                 self.driver.execute_script('arguments[0].click();', element)
+            except TimeoutException:  # mVideo last page
+                break
             except NoSuchElementException:
                 break

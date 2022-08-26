@@ -1,0 +1,16 @@
+{% extends 'app/base.html' %}
+{% block title %}Papaska's engine{% endblock %}
+
+{% block content %}
+<h4>Логин</h4>
+
+<form method="post" style="max-width:600px" action="{% url 'login' %}">
+    {% csrf_token %}
+    <input type="text" class="form-control my-3" placeholder="Логин" name="username" required>
+    <input type="email" class="form-control" placeholder="Почта" name="email" required>
+    <input type="password" class="form-control my-3" placeholder="Пароль" name="password" required>
+
+    <button type="submit" class="btn btn-success btn-block">Войти</button>
+</form>
+
+{% endblock %}

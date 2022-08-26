@@ -4,17 +4,21 @@
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#headerNavBar" aria-controls="headerNavBar" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
-        <div class="collapse navbar-collapse" id="headerNavBar">
-            <form class="d-flex ms-auto gap-2 my-2 flex-wrap flex-lg-nowrap" id="searchForm" action="{% url 'search' %}" method="POST">
-                {% csrf_token %}
-                <input autocomplete="on" autofocus class="form-control" type="search" placeholder="Поиск" name="search" required />
-                <button class="btn btn-outline-success ms-auto" type="submit">Поиск</button>
-            </form>
 
-            <form class="d-flex" id="updateDB" action="{% url 'update' %}" method="POST">
-                {% csrf_token %}
-                <button class="btn btn-outline-success ms-auto" type="submit">Update DB</button>
-            </form>
-        </div>
+        {% if request.user.is_authenticated %}
+            <div class="collapse navbar-collapse" id="headerNavBar">
+                <form class="d-flex ms-auto gap-2 my-2 flex-wrap flex-lg-nowrap" id="searchForm" action="{% url 'search' %}" method="POST">
+                    {% csrf_token %}
+                    <input autocomplete="on" autofocus class="form-control" type="search" placeholder="Поиск" name="search" required />
+                    <button class="btn btn-outline-success ms-auto" type="submit">Поиск</button>
+                </form>
+                {% if request.user.is_superuser %}
+                    <form action="{%  url 'update' %}" method="POST" id="updateDB" class="ms-2">
+                        {% csrf_token %}
+                        <button class="btn btn-outline-success">updateDB</button>
+                    </form>
+                {% endif %}
+            </div>
+        {% endif %}
     </div>
 </header>

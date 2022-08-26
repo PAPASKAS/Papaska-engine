@@ -52,19 +52,11 @@ WSGI_APPLICATION = 'search_engine.wsgi.application'
 
 
 DATABASES = {
-    # 'default': {
-    #     'ENGINE': 'django.db.backends.mysql',
-    #     'NAME': 'search_engine',
-    #     'USER': 'root',
-    #     'PASSWORD': '',
-    #     'HOST': '127.0.0.1',
-    #     'PORT': '3306'
-    # }
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'search_engine_db',
+        'NAME': "papaska's-engine_db",
         'USER': 'postgres',
-        'PASSWORD': 'postgres',
+        'PASSWORD': '',
         'HOST': 'localhost',
         'PORT': '5432'
     }
@@ -86,6 +78,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+LOGIN_REDIRECT_URL =  '/'
 
 LANGUAGE_CODE = 'ru-ru'
 

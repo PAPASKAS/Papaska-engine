@@ -1,5 +1,4 @@
 from typing import Type
-from bs4 import PageElement
 from selenium.common import NoSuchElementException, StaleElementReferenceException, TimeoutException
 from selenium.webdriver.chrome import webdriver
 from selenium.webdriver.common.by import By
@@ -8,166 +7,155 @@ from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.wait import WebDriverWait
 
 
-def get_value(telephone: WebElement, css_selector: str, timeout: int = 15) -> str or None:
-    try:
-        return WebDriverWait(telephone, timeout=timeout).until(
-            expected_conditions.presence_of_element_located((By.CSS_SELECTOR, css_selector))
-        ).text
-    except NoSuchElementException:
-        return None
-    except StaleElementReferenceException:
-        return None
-    except TimeoutException:
-        return None
+class Shop:
+    @staticmethod
+    def get_value(telephone: WebElement, css_selector: str, timeout: int = 15) -> str or None:
+        try:
+            return WebDriverWait(telephone, timeout=timeout).until(
+                expected_conditions.presence_of_element_located((By.CSS_SELECTOR, css_selector))
+            ).text
+        except NoSuchElementException:
+            return None
+        except StaleElementReferenceException:
+            return None
+        except TimeoutException:
+            return None
 
+    @staticmethod
+    def get_price(price: str) -> int:
+        return int(''.join(x for x in price if x.isdigit()))
 
-def get_price(price: str) -> int | None:
-    return int(''.join(x for x in price if x.isdigit()))
+    @staticmethod
+    def get_name(name: str) -> str:
+        if name.partition('GB')[1] != '':
+            return ''.join(name.partition('GB')[:2])
+        elif name.partition('TB')[1] != '':
+            return ''.join(name.partition('TB')[:2])
+        elif name.partition('ГБ')[1] != '':
+            return ''.join(name.partition('ГБ')[:2])
+        elif name.partition('ТБ')[1] != '':
+            return ''.join(name.partition('ТБ')[:2])
+        elif name.partition('[')[1] != '':
+            return ''.join(name.partition('[')[:1])
+        elif name.partition('(')[1] != '':
+            return ''.join(name.partition('(')[:1])
+        else:
+            return name
 
-
-def get_name(name: str | None) -> str:
-    if name.partition('GB')[1] != '':
-        return ''.join(name.partition('GB')[:2])
-    elif name.partition('TB')[1] != '':
-        return ''.join(name.partition('TB')[:2])
-    elif name.partition('ГБ')[1] != '':
-        return ''.join(name.partition('ГБ')[:2])
-    elif name.partition('ТБ')[1] != '':
-        return ''.join(name.partition('ТБ')[:2])
-    else:
-        return ''.join(name.partition('(')[:1])
-
-
-def get_data(
-    telephone: WebElement,
-    name_css_selector, current_price_css_selector, before_discount_css_selector,
-) -> dict[str, Type[str | int | None]]:
-    return {
-        'name': get_value(telephone, name_css_selector),
-        'current_price': get_value(telephone, current_price_css_selector),
-        'before_discount': get_value(telephone, before_discount_css_selector, 1),
-    }
+    @staticmethod
+    def get_data(
+        telephone: WebElement,
+        name_css_selector, current_price_css_selector, before_discount_css_selector,
+    ) -> dict[str, Type[str | int | None]]:
+        return {
+            'name': Shop.get_value(telephone, name_css_selector),
+            'current_price': Shop.get_value(telephone, current_price_css_selector),
+            'before_discount': Shop.get_value(telephone, before_discount_css_selector, 1),
+        }
 
 
 class Dns:
     @staticmethod
     def get_phone(telephone: WebElement) -> dict[str, Type[str | int | None]]:
-        data = get_data(
-            telephone=telephone,
-            name_css_selector='a.catalog-product__name',
-            current_price_css_selector='div.product-buy__price',
-            before_discount_css_selector='span.product-buy__prev'
-        )
+        data = Shop.get_data(telephone, 'a.catalog-product__name', 'div.product-buy__price', 'span.product-buy__prev')
 
         if data['name'] is None or data['current_price'] is None:
             return data
         else:
             return {
-                'name': ' '.join(get_name(data['name']).split()[1:]),
-                'current_price': get_price(data['current_price'].partition('₽')[0]),
-                'before_discount': None if data['before_discount'] is None else get_price(data['before_discount']),
+                'name': ' '.join(Shop.get_name(data['name']).split()[1:]),
+                'current_price': Shop.get_price(data['current_price'].partition('₽')[0]),
+                'before_discount': None if data['before_discount'] is None else Shop.get_price(data['before_discount']),
             }
 
     @staticmethod
-    def find_need_page(driver: webdriver, type: str) -> None:
-        driver.get('https://www.dns-shop.ru/catalog/')
-        driver.implicitly_wait(5)
-        menu: WebElement = driver.find_elements(
-            By.CSS_SELECTOR,
-            'div.subcategory__item.subcategory__item_with-childs',
-        )[1]
-        menu.click()
+    def get_cellular_phone(telephone: WebElement) -> dict[str, Type[str | int | None]]:
+        data = Shop.get_data(telephone, 'a.catalog-product__name', 'div.product-buy__price', 'span.product-buy__prev')
 
-        if type == 'smartphones' or type == 'cellular_phones':
-            menu.find_elements(By.CSS_SELECTOR, 'li.subcategory__childs-list-item')[1].click()
+        if data['name'] is None or data['current_price'] is None:
+            return data
+        else:
+            return {
+                'name': ' '.join(Shop.get_name(data['name']).split()[:-1]),
+                'current_price': Shop.get_price(data['current_price'].partition('₽')[0]),
+                'before_discount': None if data['before_discount'] is None else Shop.get_price(data['before_discount']),
+            }
 
-            if type == 'smartphones':
-                driver.find_elements(By.CSS_SELECTOR, 'a.subcategory__item.ui-link.ui-link_blue')[0].click()
-            elif type == 'cellular_phones':
-                driver.find_elements(By.CSS_SELECTOR, 'a.subcategory__item.ui-link.ui-link_blue')[3].click()
-        elif type == 'tablet':
-            menu.find_elements(By.CSS_SELECTOR, 'li.subcategory__childs-list-item')[2].click()
-            driver.find_elements(By.CSS_SELECTOR, 'a.subcategory__item.ui-link.ui-link_blue')[0].click()
+    @staticmethod
+    def find_need_page(driver: webdriver, phone_type: str) -> None:
+        if phone_type == 'smartphones':
+            driver.get('https://www.dns-shop.ru/catalog/17a8a01d16404e77/smartfony/')
+        elif phone_type == 'cellular_phones':
+            driver.get('https://www.dns-shop.ru/catalog/17a89fea16404e77/sotovye-telefony/')
+        elif phone_type == 'tablet':
+            driver.get('https://www.dns-shop.ru/catalog/17a8a05316404e77/planshety/')
 
 
 class Svyaznoy:
     @staticmethod
-    def find_need_page(driver: webdriver) -> None:
-        driver.get('https://www.svyaznoy.ru/catalog/phone/')
+    def find_need_page(driver: webdriver, phone_type: str) -> None:
+        if phone_type == 'smartphones':
+            driver.get('https://www.svyaznoy.ru/catalog/phone/224')
+        elif phone_type == 'tablet':
+            driver.get('https://www.svyaznoy.ru/catalog/notebook/7063')
 
     @staticmethod
-    def get_telephone(telephone: PageElement) -> dict[str, Type[str | int | None]]:
-        data = {
-            'name': str,
-            'current_price': int,
-            'before_discount': int | None,
-        }
+    def get_phone(telephone: WebElement):
+        data = Shop.get_data(telephone, 'span.b-product-block__name', 'span.b-product-block__visible-price', 's.b-product-block__price-old')
 
-        name: str = telephone.find('span', class_='b-product-block__name').text
-        if name.partition('GB')[1] != '':
-            data['name'] = ' '.join(name.partition('GB')[:2])
-        elif name.partition('TB')[1] != '':
-            data['name'] = ' '.join(name.partition('TB')[:2])
+        if data['name'] is None or data['current_price'] is None:
+            return data
         else:
-            data['name'] = ' '.join(name.partition('(')[:1])
-
-        data['current_price'] = get_price(telephone.find('span', class_='b-product-block__visible-price').text)
-
-        try:
-            data['before_discount'] = get_price(telephone.find('s', class_='b-product-block__price-old').text)
-        except AttributeError:
-            data['before_discount'] = None
-
-        return data
+            return {
+                'name': Shop.get_name(data['name']),
+                'current_price': Shop.get_price(data['current_price'].partition('₽')[0]),
+                'before_discount': None if data['before_discount'] is None else Shop.get_price(data['before_discount']),
+            }
 
 
 class MVideo:
     @staticmethod
-    def find_need_page(driver: webdriver):
-        driver.get('https://www.mvideo.ru/telefony')
-        driver.find_elements(By.CSS_SELECTOR, 'li.sidebar-category a')[0].click()
+    def find_need_page(driver: webdriver, phone_type: str) -> None:
+        if phone_type == 'smartphones':
+            driver.get('https://www.mvideo.ru/smartfony-i-svyaz-10/smartfony-205/')
+        elif phone_type == 'cellular_phones':
+            driver.get('https://www.mvideo.ru/smartfony-i-svyaz-10/mobilnye-telefony-95')
+        elif phone_type == 'tablet':
+            driver.get('https://www.mvideo.ru/noutbuki-planshety-komputery-8/planshety-195')
 
     @staticmethod
-    def get_telephone(telephone: PageElement) -> dict[str, Type[str | int | None]] | None:
-        data: dict[str, Type[str | int | None]] = {}
+    def get_phone(telephone: WebElement):
+        data = Shop.get_data(telephone, 'a.product-title__text', 'span.price__main-value', 'span.price__sale-value')
 
-        # data['name']
-        try:
-            name: str = telephone.find('a', class_='product-title__text').text
-            if name.partition('GB')[1] != '':
-                data['name'] = ' '.join(name.partition('GB')[:2])
-            elif name.partition('TB')[1] != '':
-                data['name'] = ' '.join(name.partition('TB')[:2])
-            else:
-                data['name'] = ' '.join(name.partition('(')[:1])
-        except AttributeError:
-            return None
-
-        # data['current_price']
-        data['current_price'] = get_price(telephone.find('span', class_='price__main-value').text)
-
-        # data['before_discount']
-        try:
-            data['before_discount'] = get_price(telephone.find('s', class_='price__sale-value').text)
-        except AttributeError:
-            data['before_discount'] = None
-
-        return data
+        if data['name'] is None or data['current_price'] is None:
+            return data
+        else:
+            return {
+                'name': Shop.get_name(data['name']),
+                'current_price': Shop.get_price(data['current_price'].partition('₽')[0]),
+                'before_discount': None if data['before_discount'] is None else Shop.get_price(data['before_discount']),
+            }
 
 
 class BQ:
     @staticmethod
-    def find_need_page(driver: webdriver):
-        driver.get('https://bq.ru/catalog/smartfony/vse-smartfony/')
-        # loading
-        for i in range(10):
-            driver.execute_script("document.querySelector('#loader').click()")
+    def find_need_page(driver: webdriver, phone_type: str) -> None:
+        if phone_type == 'smartphones':
+            driver.get('https://bq.ru/catalog/smartfony/vse-smartfony/')
+        elif phone_type == 'cellular_phones':
+            driver.get('https://bq.ru/catalog/planshety/')
+        elif phone_type == 'tablet':
+            driver.get('https://bq.ru/catalog/telefony/')
 
     @staticmethod
-    def get_telephone(telephone: PageElement):
-        return {
-            'before_discount': None,
-            'name': telephone.find('div', class_='name').text,
-            'type': telephone.find('div', class_='name').text.split()[0],
-            'current_price': get_price(telephone.find('div', class_='price').text),
-        }
+    def get_phone(telephone: WebElement):
+        data = Shop.get_data(telephone, 'div.name', 'div.price', 'div.category')  # [3] no such element
+
+        if data['name'] is None or data['current_price'] is None:
+            return data
+        else:
+            return {
+                'name': Shop.get_name(data['name']),
+                'current_price': Shop.get_price(data['current_price'].partition('₽')[0]),
+                'before_discount': None,
+            }
